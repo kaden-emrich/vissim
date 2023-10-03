@@ -103,9 +103,7 @@ class Particle {
         this.point.x += this.motion.toRectangularValue().x;
         this.point.y += this.motion.toRectangularValue().y;
 
-        if(this.point.y + this.size >= this.gameObject.canvas.height) {
-            
-            console.log("ahh");
+        if(this.point.y + this.size > this.gameObject.canvas.height) {
 
             var mr = this.motion.toRectangularValue();
             mr.y = 0 - Math.abs(mr.y);
@@ -113,6 +111,23 @@ class Particle {
             this.motion = mr.toPolarValue();
 
         }
+
+        while(this.point.y + this.size >= this.gameObject.canvas.height) {
+            this.point.y -= 1;
+        }
+
+        if(this.gameObject.gravity) {
+
+            this.motion.add(this.gameObject.gravity);
+
+        }
+
+        if(this.gameObject.dragValue) {
+
+            this.motion.magnitude *= (1 - this.gameObject.dragValue);
+            
+        }
+        
 
     }// update()
 
@@ -134,16 +149,19 @@ Game.canvas = document.getElementById("game");
 
 Game.gfx = Game.canvas.getContext('2d');
 
-Game.canvas.width = 800;
-Game.canvas.height = 800;
+Game.canvas.width = 500;
+Game.canvas.height = 500;
 Game.canvas.style.backgroundColor = "grey";
 
 Game.entities = Array();
 
-Game.updateSpeed = 1000/60; // ms
+Game.updateSpeed = 1000 / 60; // ms
 
-Game.gravityAccel = 20;
-Game.gravity = new PolarValue(Math.PI / 2, Game.gravityAccel / 60);
+Game.gravityAccel = 40 / 60;
+Game.gravity = new PolarValue(Math.PI / 2, Game.gravityAccel);
+
+Game.dragAccel = 5 / 60;
+Game.dragValue = 0.01;
 
 Game.addEntity = function(entity) {
 
@@ -157,9 +175,7 @@ Game.addEntity = function(entity) {
 
 Game.tick = function() {
 
-    for(let i = 0; i < this.entities.length; i++) {
-
-        this.entities[i].motion.add(Game.gravity);
+    for(let i = 0; i < this.entities.length; i++) { 
 
         this.entities[i].tick();
 
@@ -196,7 +212,9 @@ Game.init();
 
 function test1() {
 
-    var t1 = new Particle(new RectangularValue(200, 200), 100, Game);
+    var t1 = new Particle(new RectangularValue(100, 100), 25, Game);
     //t1.motion.add(new PolarValue(Math.PI/4, 5));
 
 }// test1()
+
+test1();
