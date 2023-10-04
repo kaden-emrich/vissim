@@ -56,6 +56,25 @@ class PolarValue {
     
     constructor(dir, mag) {
 
+        if(mag < 0) {
+
+            mag = Math.abs(mag);
+            dir += Math.PI;
+
+        }
+
+        while(dir > Math.PI * 2) {
+
+            dir -= Math.PI * 2;
+
+        }
+
+        while(dir < Math.PI * (-2)) {
+
+            dir += Math.PI * 2;
+
+        }
+
         this.direction = dir; // stored in radians
         this.magnitude = mag;
 
@@ -94,6 +113,8 @@ class Particle {
         this.point = point;
         this.size = size;
 
+        this.color = "#000000";
+
         this.motion = new PolarValue(0, 0);
  
         this.id = null;
@@ -107,10 +128,14 @@ class Particle {
         
     }// constructor
 
-    tick() {
+    updatePosition() {
 
         this.point.x += this.motion.toRectangularValue().x;
         this.point.y += this.motion.toRectangularValue().y;
+
+    }// updatePosition()
+
+    updateCollision() {
 
         var skipGravityDrag = false;
 
@@ -125,7 +150,7 @@ class Particle {
             }
 
             while(this.point.x - this.size <= 0) {
-
+                
                 this.point.x += 1;
 
             }
@@ -142,7 +167,7 @@ class Particle {
             while(this.point.y + this.size >= this.simulationObject.canvas.height) {
 
                 this.point.y -= 1;
-    
+
             }
 
             while(this.point.y - this.size <= 0) {
@@ -179,27 +204,47 @@ class Particle {
                     this.motion.magnitude = 0;
                     skipGravityDrag = true;
                     //continue;
-    
+
                 }
 
-                var updateVector = new PolarValue(new RectangularValue(this.point.x - otherEntity.point.x, this.point.y - otherEntity.point.y).toPolarValue().direction, 1);
+                var updateVector = new PolarValue(new RectangularValue(otherEntity.point.x - this.point.x, otherEntity.point.y - this.point.y).toPolarValue().direction, 1);
 
                 while(this.checkCollision(otherEntity)) {
                     
-                    this.point.x += updateVector.toRectangularValue().x;
-                    this.point.y += updateVector.toRectangularValue().y;
+                    this.point.x -= updateVector.toRectangularValue().x;
+                    this.point.y -= updateVector.toRectangularValue().y;
 
                 }
+
+                var previousForceTotal = Math.abs(this.motion.magnitude) + Math.abs(otherEntity.motion.magnitude);
 
                 var averageMagnitude = (this.motion.magnitude + otherEntity.motion.magnitude) / 2;
                 var averageDirection = (this.motion.direction + otherEntity.motion.direction) / 2;
 
-                // var tempMagnitude = this.motion.magnitude;
-                // this.motion.magnitude = this.motion.magnitude - averageMagnitude;
-                // otherEntity.motion.magnitude = otherEntity.motion.magnitude - averageMagnitude; 
-                
-                this.motion.add(new PolarValue(updateVector.direction, averageMagnitude));
-                otherEntity.motion.add(new PolarValue(Math.PI + updateVector.direction, averageMagnitude));
+                var newSpeedVector = new PolarValue(0, 0);
+                newSpeedVector.add(this.motion);
+                newSpeedVector.add(otherEntity.motion);
+
+                var directionDifference = updateVector.direction - newSpeedVector.direction;
+                var offsetVectorMagnitude = Math.abs((averageMagnitude / 1) / Math.cos(directionDifference));
+
+                var offsetVector = new PolarValue(updateVector.direction, offsetVectorMagnitude);
+
+                // var tempMotion = new PolarValue(this.motion.direction, this.motion.magnitude / 2);
+                // this.motion.add(new PolarValue(otherEntity.motion.direction, otherEntity.motion.magnitude / 2));
+                // otherEntity.motion.add(tempMotion);
+
+                otherEntity.motion.add(new PolarValue(offsetVector.direction, newSpeedVector.magnitude / 2));
+                this.motion.add(new PolarValue(offsetVector.direction, (-1) * offsetVector.magnitude));
+                this.motion.magnitude = previousForceTotal - otherEntity.motion.magnitude;
+
+                var newForceTotal = Math.abs(this.motion.magnitude) + Math.abs(otherEntity.motion.magnitude);
+
+                if(previousForceTotal != newForceTotal && (previousForceTotal >= newForceTotal + 0.001 || previousForceTotal <= newForceTotal - 0.001)) {
+
+                    console.log("Net force error: " + previousForceTotal + " => " + newForceTotal); // for debugging
+
+                }
                 
                 // this.motion.add(new PolarValue(Math.PI + averageDirection, averageMagnitude/2));
                 // otherEntity.motion.add(new PolarValue(averageDirection, averageMagnitude/2));
@@ -212,7 +257,7 @@ class Particle {
                     this.motion.magnitude = 0;
                     skipGravityDrag = true;
                     //continue;
-    
+
                 }
 
                 
@@ -241,6 +286,14 @@ class Particle {
             this.motion.add(this.simulationObject.gravity);
 
         }
+
+    }// updateCollision()
+
+    tick() {
+
+        this.updatePosition();
+        this.updateCollision();
+
     }// update()
 
     checkCollision(otherEntity) {
@@ -258,6 +311,8 @@ class Particle {
     }// checkCollision(otherEntity)
 
     draw(gfxContext) {
+
+        gfxContext.strokeStyle = this.color;
 
         gfxContext.beginPath();
 
@@ -286,7 +341,7 @@ class Simulation {
         this.gravityAccel = 0 / 60;
         this.gravity = new PolarValue(Math.PI / 2, this.gravityAccel);
 
-        this.dragValue = 0.0;
+        this.dragValue = 0.00;
 
     }// constructor(canvas)
 
@@ -304,7 +359,13 @@ class Simulation {
 
         for(let i = 0; i < this.entities.length; i++) { 
 
-            this.entities[i].tick();
+            this.entities[i].updatePosition();
+
+        }
+
+        for(let i = 0; i < this.entities.length; i++) { 
+
+            this.entities[i].updateCollision();
 
         }
 
@@ -322,9 +383,9 @@ class Simulation {
 
     update() {
 
-        this.gfx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.tick();
+
+        this.gfx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.draw();
 
     }// update()
@@ -353,10 +414,37 @@ function test1() {
     t3 = new Particle(new RectangularValue(250, 150), 50, game);
     t4 = new Particle(new RectangularValue(400, 400), 50, game);
 
+    t1.color = "red";
+    t2.color = "yellow";
+    t3.color = "green";
+    t4.color = "blue";
+
     t1.motion.add(new PolarValue(Math.PI / 3, 10));
     t3.motion.add(new PolarValue(-1 * Math.PI / 2, 10))
 
 }// test1()
+
+function test2() {
+
+    t1 = new Particle(new RectangularValue(300, 400), 50, game);
+    t2 = new Particle(new RectangularValue(275, 100), 50, game);
+
+    t1.color = "red";
+    t2.color = "blue";
+
+    t1.motion.add(new PolarValue(-1 * Math.PI / 2, 5));
+    //t2.motion.add(new PolarValue(Math.PI / 2, 5));
+
+}
+
+function stressTest1() {
+
+    for(let i = 0; i < 10; i++) {
+        let next = new Particle(new RectangularValue(20 + (Math.random() * (game.canvas.width - 40)), 20 + (Math.random() * (game.canvas.height - 40))), 20, game);
+        next.motion.add(new PolarValue(Math.random() * Math.PI * 2, Math.random() * 5));
+    }
+
+}
 
 function ball1() {
 
@@ -365,4 +453,4 @@ function ball1() {
 
 }
 
-test1();
+stressTest1();
