@@ -339,7 +339,7 @@ class Simulation {
 
         this.updateSpeed = 1000 / 60; // ms
 
-        this.gravityAccel = 0 / 60;
+        this.gravityAccel = 40 / 60;
         this.gravity = new PolarValue(Math.PI / 2, this.gravityAccel);
 
         this.dragValue = 0.00;
@@ -438,14 +438,23 @@ function test2() {
 
 }
 
-function stressTest1(size) {
+function stressTest(size, amount, maxSpeed) {
 
-    for(let i = 0; i < 10; i++) {
+    for(let i = 0; i < amount; i++) {
+
         let next = new Particle(new RectangularValue(size + (Math.random() * (game.canvas.width - size*2)), size + (Math.random() * (game.canvas.height - size*2))), size, game);
-        next.motion.add(new PolarValue(Math.random() * Math.PI * 2, Math.random() * 5));
+
+        next.motion.add(new PolarValue(Math.random() * Math.PI * 2, Math.random() * maxSpeed));
+
     }
 
-}
+}// stressTest(size, amount, maxSpeed)
+
+function stressTest1() {
+
+    stressTest(20, 10, 10);
+
+}// stressTest1()
 
 function ball1() {
 
@@ -454,4 +463,4 @@ function ball1() {
 
 }
 
-stressTest1(30);
+stressTest1();
