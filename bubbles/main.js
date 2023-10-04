@@ -339,7 +339,7 @@ class Simulation {
 
         this.updateSpeed = 1000 / 60; // ms
 
-        this.gravityAccel = 40 / 60;
+        this.gravityAccel = 0 / 60;
         this.gravity = new PolarValue(Math.PI / 2, this.gravityAccel);
 
         this.dragValue = 0.00;
