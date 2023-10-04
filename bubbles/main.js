@@ -236,13 +236,14 @@ class Particle {
 
                 otherEntity.motion.add(new PolarValue(offsetVector.direction, newSpeedVector.magnitude / 2));
                 this.motion.add(new PolarValue(offsetVector.direction, (-1) * offsetVector.magnitude));
-                this.motion.magnitude = previousForceTotal - otherEntity.motion.magnitude;
+                this.motion.magnitude = previousForceTotal - Math.abs(otherEntity.motion.magnitude);
 
                 var newForceTotal = Math.abs(this.motion.magnitude) + Math.abs(otherEntity.motion.magnitude);
 
                 if(previousForceTotal != newForceTotal && (previousForceTotal >= newForceTotal + 0.001 || previousForceTotal <= newForceTotal - 0.001)) {
 
                     console.log("Net force error: " + previousForceTotal + " => " + newForceTotal); // for debugging
+                    otherEntity.motion.magnitude = previousForceTotal - Math.abs(this.motion.magnitude);
 
                 }
                 
@@ -437,10 +438,10 @@ function test2() {
 
 }
 
-function stressTest1() {
+function stressTest1(size) {
 
     for(let i = 0; i < 10; i++) {
-        let next = new Particle(new RectangularValue(20 + (Math.random() * (game.canvas.width - 40)), 20 + (Math.random() * (game.canvas.height - 40))), 20, game);
+        let next = new Particle(new RectangularValue(size + (Math.random() * (game.canvas.width - size*2)), size + (Math.random() * (game.canvas.height - size*2))), size, game);
         next.motion.add(new PolarValue(Math.random() * Math.PI * 2, Math.random() * 5));
     }
 
@@ -453,4 +454,4 @@ function ball1() {
 
 }
 
-stressTest1();
+stressTest1(30);
