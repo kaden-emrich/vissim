@@ -353,7 +353,8 @@ function test1() {
     t3 = new Particle(new RectangularValue(250, 150), 50, game);
     t4 = new Particle(new RectangularValue(400, 400), 50, game);
 
-    t1.motion.add(new PolarValue(-1 * Math.PI / 2, 40))
+    t1.motion.add(new PolarValue(Math.PI / 3, 10));
+    t3.motion.add(new PolarValue(-1 * Math.PI / 2, 10))
 
 }// test1()
 
