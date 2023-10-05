@@ -50,6 +50,21 @@ class RectangularValue {
 
     }// toPolarValue()
 
+    equals(otherRectangularValue) {
+
+        if(this.x == otherRectangularValue.x && this.y == otherRectangularValue.y) {
+
+            return true;
+
+        }
+        else {
+
+            return false;
+
+        }
+
+    }
+
 }// class Point
 
 class PolarValue {
@@ -131,6 +146,12 @@ class Particle {
 
     updatePosition() {
 
+        if(this.motion.magnitude > this.simulationObject.maxSpeed) {
+
+            this.motion.magnitude = this.simulationObject.maxSpeed;
+
+        }
+
         this.point.x += this.motion.toRectangularValue().x;
         this.point.y += this.motion.toRectangularValue().y;
 
@@ -157,7 +178,7 @@ class Particle {
             }
 
             var rectangularMotion = this.motion.toRectangularValue();
-            rectangularMotion.x = this.simulationObject.gravityAccel + (-1 * rectangularMotion.x);
+            rectangularMotion.x = this.simulationObject.gravity.magnitude + (-1 * rectangularMotion.x);
 
             this.motion = rectangularMotion.toPolarValue();
 
@@ -176,7 +197,7 @@ class Particle {
                 this.point.y += 1;
             }
 
-            if(this.motion.magnitude < 1 && Math.abs(this.simulationObject.gravity.magnitude) > 0) {
+            if(this.motion.magnitude <= this.simulationObject.gravity.magnitude && Math.abs(this.simulationObject.gravity.magnitude) > 0) {
 
                 this.motion.magnitude = 0;
                 skipGravityDrag = true;
@@ -185,7 +206,7 @@ class Particle {
             else {
 
                 var rectangularMotion = this.motion.toRectangularValue();
-                rectangularMotion.y = this.simulationObject.gravityAccel + (-1 * rectangularMotion.y);
+                rectangularMotion.y = this.simulationObject.gravity.magnitude + (-1 * rectangularMotion.y);
 
                 this.motion = rectangularMotion.toPolarValue();
 
@@ -200,20 +221,56 @@ class Particle {
 
             if(otherEntity != this && this.checkCollision(otherEntity)) {
 
-                if(this.motion.magnitude < 1 && Math.abs(this.simulationObject.gravity.magnitude) > 0) {
+                var updateVector = new PolarValue(new RectangularValue(otherEntity.point.x - this.point.x, otherEntity.point.y - this.point.y).toPolarValue().direction, 1);
 
-                    this.motion.magnitude = 0;
-                    skipGravityDrag = true;
-                    //continue;
+                while(
+                    this.checkCollision(otherEntity) && (
+                        !(this.point.x + this.size >= this.simulationObject.canvas.width || this.point.x - this.size <= 0) && 
+                        !(this.point.y + this.size >= this.simulationObject.canvas.height || this.point.y - this.size <= 0)
+                        )
+                    ) {
+                    
+                    if(!(this.point.x + this.size >= this.simulationObject.canvas.width || this.point.x - this.size <= 0)) {
+
+                        this.point.x -= updateVector.toRectangularValue().x;
+
+                    }
+
+                    if(!(this.point.y + this.size >= this.simulationObject.canvas.height || this.point.y - this.size <= 0)) {
+
+                        this.point.y -= updateVector.toRectangularValue().y;
+
+                    }
 
                 }
 
-                var updateVector = new PolarValue(new RectangularValue(otherEntity.point.x - this.point.x, otherEntity.point.y - this.point.y).toPolarValue().direction, 1);
-
-                while(this.checkCollision(otherEntity)) {
+                while(
+                    otherEntity.checkCollision(this) && (
+                        !(otherEntity.point.x + otherEntity.size >= otherEntity.simulationObject.canvas.width || otherEntity.point.x - otherEntity.size <= 0) && 
+                        !(otherEntity.point.y + otherEntity.size >= otherEntity.simulationObject.canvas.height || otherEntity.point.y - otherEntity.size <= 0)
+                        )
+                    ) {
                     
-                    this.point.x -= updateVector.toRectangularValue().x;
-                    this.point.y -= updateVector.toRectangularValue().y;
+                    if(!(otherEntity.point.x + otherEntity.size >= otherEntity.simulationObject.canvas.width || otherEntity.point.x - otherEntity.size <= 0)) {
+
+                        otherEntity.point.x += updateVector.toRectangularValue().x;
+
+                    }
+
+                    if(!(otherEntity.point.y + otherEntity.size >= otherEntity.simulationObject.canvas.height || otherEntity.point.y - otherEntity.size <= 0)) {
+
+                        otherEntity.point.y += updateVector.toRectangularValue().y;
+
+                    }
+
+                }
+
+                if(this.motion.magnitude < this.simulationObject.gravity.magnitude && otherEntity.motion.magnitude < this.simulationObject.gravity.magnitude) {
+
+                    this.motion.magnitude = 0;
+                    otherEntity.motion.magnitude = 0;
+                    skipGravityDrag = true;
+                    continue;
 
                 }
 
@@ -231,10 +288,6 @@ class Particle {
 
                 var offsetVector = new PolarValue(updateVector.direction, offsetVectorMagnitude);
 
-                // var tempMotion = new PolarValue(this.motion.direction, this.motion.magnitude / 2);
-                // this.motion.add(new PolarValue(otherEntity.motion.direction, otherEntity.motion.magnitude / 2));
-                // otherEntity.motion.add(tempMotion);
-
                 otherEntity.motion.add(new PolarValue(offsetVector.direction, newSpeedVector.magnitude / 2));
                 this.motion.add(new PolarValue(offsetVector.direction, (-1) * (previousForceTotal - otherEntity.motion.magnitude)));
                 this.motion.magnitude = previousForceTotal - otherEntity.motion.magnitude;
@@ -247,22 +300,15 @@ class Particle {
                     otherEntity.motion.magnitude = previousForceTotal - this.motion.magnitude;
 
                 }
-                
-                // this.motion.add(new PolarValue(Math.PI + averageDirection, averageMagnitude/2));
-                // otherEntity.motion.add(new PolarValue(averageDirection, averageMagnitude/2));
 
-                // this.motion.add(new PolarValue(Math.PI / 2 + updateVector.direction, averageMagnitude/2));
-                // otherEntity.motion.add(new PolarValue(Math.PI + updateVector.direction, averageMagnitude/2));
+                // if(this.motion.magnitude < 1 && Math.abs(this.simulationObject.gravity.magnitude && otherEntity.motion.magnitude < 1 && Math.abs(otherEntity.simulationObject.gravity.magnitude) > 0) > 0) {
 
-                if(this.motion.magnitude < 1 && Math.abs(this.simulationObject.gravity.magnitude) > 0) {
+                //     this.motion.magnitude = 0;
+                //     otherEntity.motion.magnitude = 0;
+                //     skipGravityDrag = true;
+                //     continue;
 
-                    this.motion.magnitude = 0;
-                    skipGravityDrag = true;
-                    //continue;
-
-                }
-
-                
+                // }
 
             }
 
@@ -300,6 +346,10 @@ class Particle {
 
     checkCollision(otherEntity) {
 
+        if(otherEntity.id == this.id) {
+            return false;
+        }
+
         var minDist = this.size + otherEntity.size;
 
         if(this.point.getDistance(otherEntity.point) <= minDist) {
@@ -316,7 +366,10 @@ class Particle {
 
         gfxContext.strokeStyle = this.borderColor;
         gfxContext.fillStyle = this.color;
-        gfxContext.lineWidth = 2;
+        gfxContext.lineWidth = 3;
+
+        // gfxContext.shadowColor = this.borderColor;
+        // gfxContext.shadowBur = 10;
 
         gfxContext.beginPath();
 
@@ -346,10 +399,13 @@ class Simulation {
 
         this.updateSpeed = 1000 / 60; // ms
 
-        this.gravityAccel = 0 / 60;
-        this.gravity = new PolarValue(Math.PI / 2, this.gravityAccel);
+        this.gravity = new PolarValue(Math.PI / 2, 0 / 60); // gravity is still very broken
 
-        this.dragValue = 0.00;
+        this.dragValue = 0.0;
+
+        this.maxSpeed = this.canvas.height / 2;
+
+        this.updateCanvasSize();
 
     }// constructor(canvas)
 
@@ -364,6 +420,12 @@ class Simulation {
     }// addEntity(entity)
 
     tick() {
+
+        for(let i = 0; i < this.entities.length; i++) { 
+
+            this.entities[i].updateCollision();
+
+        }
 
         for(let i = 0; i < this.entities.length; i++) { 
 
@@ -412,27 +474,24 @@ class Simulation {
 
     start() {
 
+        this.updateCanvasSize();
         this.updateInterval = setInterval(() => { this.update(); }, this.updateSpeed);
 
     }// init()
 
 }// class Simulation
 
-var game = new Simulation(document.getElementById('game'));
-game.start();
-
-
-var t1;
-var t2;
-var t3;
-var t4;
+var game;
 
 function test1() {
 
-    t1 = new Particle(new RectangularValue(280, 400), 50, game);
-    t2 = new Particle(new RectangularValue(100, 100), 50, game);
-    t3 = new Particle(new RectangularValue(250, 150), 50, game);
-    t4 = new Particle(new RectangularValue(400, 400), 50, game);
+    game = new Simulation(document.getElementById('game'));
+    game.start();
+
+    var t1 = new Particle(new RectangularValue(280, 400), 50, game);
+    var t2 = new Particle(new RectangularValue(100, 100), 50, game);
+    var t3 = new Particle(new RectangularValue(250, 150), 50, game);
+    var t4 = new Particle(new RectangularValue(400, 400), 50, game);
 
     t1.color = "red";
     t2.color = "yellow";
@@ -446,8 +505,11 @@ function test1() {
 
 function test2() {
 
-    t1 = new Particle(new RectangularValue(300, 400), 50, game);
-    t2 = new Particle(new RectangularValue(275, 100), 50, game);
+    game = new Simulation(document.getElementById('game'));
+    game.start();
+
+    var t1 = new Particle(new RectangularValue(300, 400), 50, game);
+    var t2 = new Particle(new RectangularValue(275, 100), 50, game);
 
     t1.color = "red";
     t2.color = "blue";
@@ -457,35 +519,44 @@ function test2() {
 
 }
 
-function stressTest(size, amount, maxSpeed) {
+
+function ball1() {
+
+    game = new Simulation(document.getElementById('game'));
+    game.start();
+
+    var t1 = new Particle(new RectangularValue(game.canvas.width / 2, game.canvas.height / 2), 50, game);
+    t1.motion.add(new PolarValue(Math.PI / 3, 10));
+
+}
+
+function stressTest(simObj, size, amount, maxSpeed) {
+
+    game.maxSpeed = maxSpeed;
 
     for(let i = 0; i < amount; i++) {
 
-        let next = new Particle(new RectangularValue(size + (Math.random() * (game.canvas.width - size*2)), size + (Math.random() * (game.canvas.height - size*2))), size, game);
+        let next = new Particle(new RectangularValue(size + (Math.random() * (simObj.canvas.width - size*2)), size + (Math.random() * (simObj.canvas.height - size*2))), size, simObj);
 
         next.motion.add(new PolarValue(Math.random() * Math.PI * 2, Math.random() * maxSpeed));
 
         let colorHue = Math.floor(Math.random() * 255);
 
-        next.color = "hsla(" + colorHue + ", 75%, 50%, 0.3)";
-        next.borderColor = next.color = "hsla(" + colorHue + ", 60%, 50%, 0.5)";
-
+        next.color = "hsla(" + colorHue + ", 75%, 50%, 0.1)";
+        next.borderColor = next.color = "hsla(" + colorHue + ", 60%, 50%, 0.3)";
 
     }
 
-}// stressTest(size, amount, maxSpeed)
+}// stressTest(simObj, size, amount, maxSpeed)
 
 function stressTest1() {
 
-    stressTest(30, 10, 10);
+    game = new Simulation(document.getElementById('game'));
+    // game.gravity.magnitude = 2/3;
+    // game.dragValue = 0.02;
+
+    stressTest(game, 50, 10, 10);
+
+    game.start();
 
 }// stressTest1()
-
-function ball1() {
-
-    t1 = new Particle(new RectangularValue(game.canvas.width / 2, game.canvas.height / 2), 50, game);
-    t1.motion.add(new PolarValue(Math.PI / 3, 10));
-
-}
-
-stressTest1();
