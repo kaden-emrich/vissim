@@ -113,7 +113,8 @@ class Particle {
         this.point = point;
         this.size = size;
 
-        this.color = "#000000";
+        this.color = "hsla(0, 0, 0, 0)";
+        this.borderColor = "hsla(0, 0, 0, 1)";
 
         this.motion = new PolarValue(0, 0);
  
@@ -216,7 +217,7 @@ class Particle {
 
                 }
 
-                var previousForceTotal = Math.abs(this.motion.magnitude) + Math.abs(otherEntity.motion.magnitude);
+                var previousForceTotal = this.motion.magnitude + otherEntity.motion.magnitude;
 
                 var averageMagnitude = (this.motion.magnitude + otherEntity.motion.magnitude) / 2;
                 var averageDirection = (this.motion.direction + otherEntity.motion.direction) / 2;
@@ -235,15 +236,15 @@ class Particle {
                 // otherEntity.motion.add(tempMotion);
 
                 otherEntity.motion.add(new PolarValue(offsetVector.direction, newSpeedVector.magnitude / 2));
-                this.motion.add(new PolarValue(offsetVector.direction, (-1) * offsetVector.magnitude));
-                this.motion.magnitude = previousForceTotal - Math.abs(otherEntity.motion.magnitude);
+                this.motion.add(new PolarValue(offsetVector.direction, (-1) * (previousForceTotal - otherEntity.motion.magnitude)));
+                this.motion.magnitude = previousForceTotal - otherEntity.motion.magnitude;
 
-                var newForceTotal = Math.abs(this.motion.magnitude) + Math.abs(otherEntity.motion.magnitude);
+                var newForceTotal = this.motion.magnitude + otherEntity.motion.magnitude;
 
                 if(previousForceTotal != newForceTotal && (previousForceTotal >= newForceTotal + 0.001 || previousForceTotal <= newForceTotal - 0.001)) {
 
                     console.log("Net force error: " + previousForceTotal + " => " + newForceTotal); // for debugging
-                    otherEntity.motion.magnitude = previousForceTotal - Math.abs(this.motion.magnitude);
+                    otherEntity.motion.magnitude = previousForceTotal - this.motion.magnitude;
 
                 }
                 
@@ -313,14 +314,18 @@ class Particle {
 
     draw(gfxContext) {
 
-        gfxContext.strokeStyle = this.color;
+        gfxContext.strokeStyle = this.borderColor;
+        gfxContext.fillStyle = this.color;
+        gfxContext.lineWidth = 2;
 
         gfxContext.beginPath();
 
         gfxContext.arc(Math.floor(this.point.x), Math.floor(this.point.y), this.size, 0, 2 * Math.PI);
 
-        gfxContext.stroke();
 
+        gfxContext.fill();
+        gfxContext.stroke();
+        
     }// draw(gfxContext)
 
 }// class Particle
@@ -333,7 +338,9 @@ class Simulation {
 
         this.gfx = canvas.getContext('2d');
 
-        this.canvas.style.backgroundColor = "grey";
+        this.gfx.lineWidth = 20;
+
+        //this.canvas.style.backgroundColor = "grey";
 
         this.entities = Array();
 
@@ -382,7 +389,19 @@ class Simulation {
 
     }// draw()
 
+    updateCanvasSize() {
+
+        this.canvas.width = (this.canvas.height / window.innerHeight) * window.innerWidth;
+
+        this.canvas.style.height = window.innerHeight + "px";
+
+        this.canvas.style.width = window.innerWidth + "px";
+
+    }// updateCanvasSize()
+
     update() {
+
+        this.updateCanvasSize();
 
         this.tick();
 
@@ -446,13 +465,19 @@ function stressTest(size, amount, maxSpeed) {
 
         next.motion.add(new PolarValue(Math.random() * Math.PI * 2, Math.random() * maxSpeed));
 
+        let colorHue = Math.floor(Math.random() * 255);
+
+        next.color = "hsla(" + colorHue + ", 75%, 50%, 0.3)";
+        next.borderColor = next.color = "hsla(" + colorHue + ", 60%, 50%, 0.5)";
+
+
     }
 
 }// stressTest(size, amount, maxSpeed)
 
 function stressTest1() {
 
-    stressTest(20, 10, 10);
+    stressTest(30, 10, 10);
 
 }// stressTest1()
 
