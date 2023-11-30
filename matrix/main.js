@@ -13,15 +13,15 @@ var drops = [];
 var hues = [];
 
 function sizeScreen() {
-    game.height = window.innerHeight;
-    game.width = window.innerWidth;
-    columns = game.width/fontSize;
+  game.height = window.innerHeight;
+  game.width = window.innerWidth;
+  columns = game.width/fontSize;
 
-    drops = [];
-    for(let i = 0; i < columns; i++) {
-        drops[i] = 1;
-        hues[i] = 0;
-    }
+  drops = [];
+  for(let i = 0; i < columns; i++) {
+      drops[i] = 1;
+      hues[i] = 0;
+  }
 }
 
 function importUrlVars() {
@@ -48,6 +48,8 @@ function draw() {
       sizeScreen();
   }
 
+  
+  ctx.font = (fontSize) + 'px monospace';
   ctx.fillStyle = 'rgba(0, 0, 0, .1)';
   ctx.fillRect(0, 0, game.width, game.height);
 
@@ -75,6 +77,6 @@ function draw() {
 }
   
 
-sizeScreen();
 importUrlVars();
+sizeScreen();
 setInterval(draw, 20);
