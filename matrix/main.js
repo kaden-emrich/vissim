@@ -28,15 +28,18 @@ function importUrlVars() {
   var urlParams = new URLSearchParams(window.location.search);
 
   if(urlParams.get('color') != null) {
-    rainColor = urlParams.get('color');
+    rainColor =  "#" + urlParams.get('color');
+    console.log('Setting rainColor to: ' + rainColor);
   }
 
   if(urlParams.get('rainbow') == 'true') {
     rainbow = true;
+    console.log('Setting rainbow to: ' + rainbow);
   }
 
   if(urlParams.get('font-size') != null) {
     fontSize = parseInt(urlParams.get('font-size'));
+    console.log('Setting fontSize to: ' + fontSize);
   }
 }
 
