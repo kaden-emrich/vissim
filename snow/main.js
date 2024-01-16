@@ -4,7 +4,7 @@ const ctx = gameFrame.getContext("2d");
 // gameFrame.style.width = "400px";
 // gameFrame.style.height = "400px";
 
-var scaleValue = 5;
+var scaleValue = 8;
 
 importUrlVars();
 
@@ -117,10 +117,21 @@ gameFrame.addEventListener('mousedown', (event) => {
     cells[loc.y][loc.x] = 1;
 }); 
 
+var tickNum = -(width * 5);
+
 function tick() {
     cells[0][Math.floor(Math.random() * width)] = 1;
     updateSand();
     drawSand();
+
+    if(tickNum >= width) { 
+        console.log('clearing last line'); // for debugging
+        cells[height-1] = prepareCellArray(width, height)[height-1];
+        tickNum = 0;
+    }
+    else {
+        tickNum ++;
+    }
 }
 
 setInterval(tick, 1000 / 30);
