@@ -8,6 +8,7 @@ var rainColor = "#00ff00";
 var rainbow = false;
 
 var fontSize = 10;
+var delay = 20;
 var columns;
 var drops = [];
 var hues = [];
@@ -40,6 +41,11 @@ function importUrlVars() {
   if(urlParams.get('font-size') != null) {
     fontSize = parseInt(urlParams.get('font-size'));
     console.log('Setting fontSize to: ' + fontSize);
+  }
+
+  if(urlParams.get('delay') != null) {
+    delay = parseInt(urlParams.get('delay'));
+    console.log('Setting delay to: ' + delay);
   }
 }
 
@@ -82,4 +88,4 @@ function draw() {
 
 importUrlVars();
 sizeScreen();
-setInterval(draw, 20);
+setInterval(draw, delay);
