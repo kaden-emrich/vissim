@@ -10,6 +10,7 @@ var rainbow = false;
 var fontSize = 10;
 var delay = 20;
 var columns;
+var firstDrops = [];
 var drops = [];
 var hues = [];
 
@@ -19,6 +20,7 @@ function sizeScreen() {
   columns = game.width/fontSize;
 
   drops = [];
+  firstDrops = Array(Math.floor(columns)).fill(true);
   for(let i = 0; i < columns; i++) {
       drops[i] = 1;
       hues[i] = 0;
@@ -78,10 +80,17 @@ function draw() {
     ctx.fillText(text, i * fontSize, drops[i] * fontSize);
     drops[i]++;
 
-    if (drops[i] * fontSize > game.height && Math.random() > .95) {
-      drops[i] = 0;
+    if(drops[i] * fontSize > game.height) {
+      if(firstDrops[i] == true) {
+        if(Math.random() > (1 - fontSize / window.innerHeight)) {
+          drops[i] = 0;
+          firstDrops[i] = false;
+        }
+      }
+      else if(Math.random() > (.95)) {
+        drops[i] = 0;
+      }
     }
-
   }
 }
   
