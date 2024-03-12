@@ -1,17 +1,20 @@
 const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
 
-var dotSize = 5;
-var minDist = 100;
-var dotDist = 18;
+var dotSize = 15;
+var minDist = 150;
+var dotDist = 31;
 var returnDist = 1000;
 
-let mouseMultiplier = 10;
+var mouseMultiplier = 10;
+var spacingMultiplier = 1;
 
 var dots = [];
 
 var doReturn = true;
 var doDotRepel = true;
+
+var ignoreMouse = false;
 
 var dotColor = "#ffffff";
 
@@ -19,6 +22,16 @@ var mouse = {
     x : -1000,
     y : -1000
 };
+
+function toggleMouse() {
+    ignoreMouse = !ignoreMouse;
+}
+
+document.addEventListener('keypress', (event) => {
+    if(event.key == 'i' || event.key == 'I') {
+        toggleMouse();
+    }
+})
 
 document.onmousemove = (event) => {
     mouse.x = event.clientX;
@@ -44,39 +57,6 @@ function calcPhys(dotIndex) {
 
     let nextX = dot[0];
     let nextY = dot[1];
-
-    let xDist = mouse.x - dot[0];
-    let yDist = mouse.y - dot[1];
-
-    let dist = Math.sqrt(xDist*xDist + yDist*yDist);
-
-    let isMouseColide = false;
-
-    let smoothMouse = (lastMouseDiff + mouseDiff) / 2;
-    // let t = mouseDiff > mouseMultiplier ? 1 : mouseDiff / mouseMultiplier;
-    // let t = smoothMouse > mouseMultiplier ? 1 : smoothMouse / mouseMultiplier;
-    // var mDist = lerp(0, minDist, t);
-    
-    var mDist = minDist;
-
-    if(dist < mDist) {
-        let isMouseColide = true;
-
-        let dir = xDist == 0 ? 
-            yDist > 0 ? 
-                90 : -90
-            : xDist > 0 ?
-                Math.atan(yDist / xDist) + Math.PI : Math.atan(yDist / xDist);
-
-        let offsetDist = lerp(mDist, 0, dist/mDist);
-
-        
-        let xOffset = Math.cos(dir) * offsetDist;
-        let yOffset = Math.sin(dir) * offsetDist;
-
-        nextX = nextX + xOffset;
-        nextY = nextY + yOffset;
-    }
     
     if(doDotRepel) {
         for(let i = 0; i < dots.length; i++) {
@@ -115,21 +95,58 @@ function calcPhys(dotIndex) {
 
         let t = dist > returnDist ? 1 : dist / returnDist;
 
-        nextX = snapLerpB(nextX, dot[2], t, 0.6);
-        nextY = snapLerpB(nextY, dot[3], t, 0.6);
+        nextX = snapLerpB(nextX, dot[2], t, 0.9);
+        nextY = snapLerpB(nextY, dot[3], t, 0.9);
     }
 
-    if(nextX - dotSize < 0) {
-        nextX = 0 + dotSize + (Math.random()); // adds a little randomness to avoid the dots getting stuck
+    if(!ignoreMouse) {
+        let xDist = mouse.x - dot[0];
+        let yDist = mouse.y - dot[1];
+
+        let dist = Math.sqrt(xDist*xDist + yDist*yDist);
+
+        let isMouseColide = false;
+
+        let smoothMouse = (lastMouseDiff + mouseDiff) / 2;
+        // let t = mouseDiff > mouseMultiplier ? 1 : mouseDiff / mouseMultiplier;
+        // let t = smoothMouse > mouseMultiplier ? 1 : smoothMouse / mouseMultiplier;
+        // var mDist = lerp(0, minDist, t);
+        
+        var mDist = minDist;
+
+        if(dist < mDist) {
+            let isMouseColide = true;
+
+            let dir = xDist == 0 ? 
+                yDist > 0 ? 
+                    90 : -90
+                : xDist > 0 ?
+                    Math.atan(yDist / xDist) + Math.PI : Math.atan(yDist / xDist);
+
+            let offsetDist = lerp(mDist, 0, dist/mDist);
+
+            
+            let xOffset = Math.cos(dir) * offsetDist;
+            let yOffset = Math.sin(dir) * offsetDist;
+
+            nextX = nextX + xOffset;
+            nextY = nextY + yOffset;
+        }
     }
-    else if(nextX + dotSize > canvas.width) {
-        nextX = canvas.width - dotSize - (Math.random());
-    }
-    if(nextY - dotSize < 0) {
-        nextY = 0 + dotSize + (Math.random());
-    }
-    else if(nextY + dotSize > canvas.height) {
-        nextY = canvas.height - dotSize - (Math.random());
+
+    if(!doReturn) {
+        if(nextX - dotSize < 0) {
+            nextX = 0 + dotSize + (Math.random()); // adds a little randomness to avoid the dots getting stuck
+        }
+        else if(nextX + dotSize > canvas.width) {
+            nextX = canvas.width - dotSize - (Math.random());
+        }
+        if(nextY - dotSize < 0) {
+            nextY = 0 + dotSize + (Math.random());
+        }
+        else if(nextY + dotSize > canvas.height) {
+            nextY = canvas.height - dotSize - (Math.random());
+        }
     }
     dots[dotIndex][0] = nextX;
     dots[dotIndex][1] = nextY;
@@ -199,8 +216,8 @@ function genRandDots(numDots) {
 function genDots() {
     dots = [];
 
-    var yDotOffset = ((window.innerHeight - dotSize * 2) % (dotDist * 1.5)) / 2;
-    var xDotOffset = ((window.innerWidth - dotSize * 2) % (dotDist * 1.5)) / 2;
+    var yDotOffset = ((window.innerHeight - dotSize * 2) % (dotDist * spacingMultiplier)) / 2;
+    var xDotOffset = ((window.innerWidth - dotSize * 2) % (dotDist * spacingMultiplier)) / 2;
 
     if(yDotOffset < dotSize) {
         yDotOffset = dotSize;
@@ -209,8 +226,8 @@ function genDots() {
         xDotOffset = dotSize;
     }
 
-    for(let y = yDotOffset; y < canvas.height; y += dotDist * 1.5) {
-        for(let x = xDotOffset; x < canvas.width; x += dotDist * 1.5) {
+    for(let y = yDotOffset; y < canvas.height; y += dotDist * spacingMultiplier) {
+        for(let x = xDotOffset; x < canvas.width; x += dotDist * spacingMultiplier) {
             dots.push([x, y, x, y]);
         }
     }
@@ -228,4 +245,9 @@ function init() {
 
 init();
 
-addEventListener('resize', init);
+addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    genDots();
+});
