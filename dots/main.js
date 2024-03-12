@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 
 var dotSize = 5;
 var minDist = 100;
-var dotDist = 20;
+var dotDist = 18;
 var returnDist = 1000;
 
 let mouseMultiplier = 10;
@@ -11,6 +11,9 @@ let mouseMultiplier = 10;
 var dots = [];
 
 var doReturn = true;
+var doDotRepel = true;
+
+var dotColor = "#ffffff";
 
 var mouse = {
     x : -1000,
@@ -19,7 +22,21 @@ var mouse = {
 
 document.onmousemove = (event) => {
     mouse.x = event.clientX;
-    mouse.y = event.clientY;  
+    mouse.y = event.clientY;
+
+    if(
+        event.clientX <= 5 ||
+        event.clientX >= window.innerWidth - 5 ||
+        event.clientY <= 5 ||
+        event.clientY >= window.innerHeight - 5
+    ) {
+        mouse.x = -1000;
+        mouse.y = -1000;
+    }
+    else {
+        mouse.x = event.clientX;
+        mouse.y = event.clientY;
+    }
 }
 
 function calcPhys(dotIndex) {
@@ -39,6 +56,7 @@ function calcPhys(dotIndex) {
     // let t = mouseDiff > mouseMultiplier ? 1 : mouseDiff / mouseMultiplier;
     // let t = smoothMouse > mouseMultiplier ? 1 : smoothMouse / mouseMultiplier;
     // var mDist = lerp(0, minDist, t);
+    
     var mDist = minDist;
 
     if(dist < mDist) {
@@ -59,33 +77,35 @@ function calcPhys(dotIndex) {
         nextX = nextX + xOffset;
         nextY = nextY + yOffset;
     }
+    
+    if(doDotRepel) {
+        for(let i = 0; i < dots.length; i++) {
+            if(i == dotIndex) continue;
 
-    for(let i = 0; i < dots.length; i++) {
-        if(i == dotIndex) continue;
+            let xDist = dots[i][0] - dot[0];
+            let yDist = dots[i][1] - dot[1];
 
-        let xDist = dots[i][0] - dot[0];
-        let yDist = dots[i][1] - dot[1];
+            let dist = Math.sqrt(xDist*xDist + yDist*yDist);
 
-        let dist = Math.sqrt(xDist*xDist + yDist*yDist);
+            if(dist < dotDist) {
+                let dir = xDist == 0 ? 
+                    yDist > 0 ? 
+                        90 : -90
+                    : xDist > 0 ?
+                        Math.atan(yDist / xDist) + Math.PI : Math.atan(yDist / xDist);
 
-        if(dist < dotDist) {
-            let dir = xDist == 0 ? 
-                yDist > 0 ? 
-                    90 : -90
-                : xDist > 0 ?
-                    Math.atan(yDist / xDist) + Math.PI : Math.atan(yDist / xDist);
+                let offsetDist = lerp(dotDist, 0, dist/dotDist);
 
-            let offsetDist = lerp(dotDist, 0, dist/dotDist);
+                // dir += isMouseColide ? 0 : (Math.random() * 2 - 1); // adds a little randomness to avoid the dots getting stuck
 
-            // dir += isMouseColide ? 0 : (Math.random() * 2 - 1); // adds a little randomness to avoid the dots getting stuck
+                let xOffset = Math.cos(dir) * offsetDist;
+                let yOffset = Math.sin(dir) * offsetDist;
 
-            let xOffset = Math.cos(dir) * offsetDist;
-            let yOffset = Math.sin(dir) * offsetDist;
-
-            nextX = nextX + xOffset;
-            nextY = nextY + yOffset;
+                nextX = nextX + xOffset;
+                nextY = nextY + yOffset;
+            }
         }
-    }
+    } 
 
     if(doReturn) {
         let xDist = dot[2] - dot[0];
@@ -95,8 +115,8 @@ function calcPhys(dotIndex) {
 
         let t = dist > returnDist ? 1 : dist / returnDist;
 
-        nextX = lerp(nextX, dot[2], t);
-        nextY = lerp(nextY, dot[3], t);   
+        nextX = snapLerpB(nextX, dot[2], t, 0.6);
+        nextY = snapLerpB(nextY, dot[3], t, 0.6);
     }
 
     if(nextX - dotSize < 0) {
@@ -126,6 +146,7 @@ function clearFrame() {
 
 function drawFrame() {
     dots.forEach((dot) => {
+        ctx.fillStyle = dotColor;
         ctx.beginPath();
         ctx.arc(dot[0], dot[1], dotSize, 0, Math.PI*2);
         // ctx.closePath();
@@ -178,8 +199,18 @@ function genRandDots(numDots) {
 function genDots() {
     dots = [];
 
-    for(let y = dotSize; y < canvas.height; y += dotDist * 1.5) {
-        for(let x = dotSize; x < canvas.width; x += dotDist * 1.5) {
+    var yDotOffset = ((window.innerHeight - dotSize * 2) % (dotDist * 1.5)) / 2;
+    var xDotOffset = ((window.innerWidth - dotSize * 2) % (dotDist * 1.5)) / 2;
+
+    if(yDotOffset < dotSize) {
+        yDotOffset = dotSize;
+    }
+    if(xDotOffset < dotSize) {
+        xDotOffset = dotSize;
+    }
+
+    for(let y = yDotOffset; y < canvas.height; y += dotDist * 1.5) {
+        for(let x = xDotOffset; x < canvas.width; x += dotDist * 1.5) {
             dots.push([x, y, x, y]);
         }
     }
@@ -196,3 +227,5 @@ function init() {
 }
 
 init();
+
+addEventListener('resize', init);
