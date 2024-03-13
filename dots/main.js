@@ -1,12 +1,12 @@
 const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
 
-var dotSize = 10;
+var dotSize = 30;
 var defaultDist = 100;
 var explodeDist = 400;
 var implodeDist = 100;
 var minDist = defaultDist;
-var dotDist = 15;
+var dotDist = 30;
 var returnDist = 1000;
 
 var defaultReturnValue = 0.01;
@@ -39,9 +39,16 @@ function toggleMouse() {
     ignoreMouse = !ignoreMouse;
 }
 
+function toggleSludge() {
+    canvas.classList.toggle('sludge');
+}
+
 document.addEventListener('keypress', (event) => {
     if(event.key == 'i' || event.key == 'I') {
         toggleMouse();
+    }
+    else if(event.key == 's' || event.key == 'S') {
+        toggleSludge();
     }
 })
 
@@ -342,9 +349,22 @@ function genDots() {
     }
 }
 
+function importURLVariables() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sludgeParam = urlParams.get('sludge');
+    if (sludgeParam) {
+        sludge = sludgeParam == 'true' ? true : false;
+        if(sludge) {
+            canvas.classList.add('sludge');
+        }
+    }
+}
+
 function init() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+
+    importURLVariables();
 
     genDots();
 
