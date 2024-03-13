@@ -1,7 +1,7 @@
 const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
 
-var dotSize = 5;
+var dotSize = 10;
 var minDist = 100;
 var dotDist = 15;
 var returnDist = 1000;
@@ -20,7 +20,7 @@ var doDotRepel = false;
 
 var ignoreMouse = false;
 
-var colorMode = 'brightness';
+var colorMode = 'transparency';
 
 var dotColor = "#ffffff";
 
@@ -79,6 +79,10 @@ function getColor(dot) {
             a = dist > minDist ? 1 : dist / minDist;
             return `hsl(0, 0%, ${Math.floor(a*100)}%)`;
             break;
+        case 'transparency':
+            a = dist > minDist ? 1 : dist / minDist;
+            return `rgba(255,255,255,${a})`;
+            break;
         case 'hue':
             a = dist > minDist * 1.5 ? 1 : dist / (minDist * 1.5);
             return `hsl(${a*300}, 100%, 50%)`;
@@ -106,7 +110,7 @@ function calcPhys(dotIndex) {
             let dist = Math.sqrt(xDist*xDist + yDist*yDist);
 
             if(dist < dotDist) {
-                let dir = xDist == 0 ? 
+                const dir = xDist == 0 ? 
                     yDist > 0 ? 
                         90 : -90
                     : xDist > 0 ?
@@ -114,12 +118,12 @@ function calcPhys(dotIndex) {
 
                 
                 // let offsetDist = lerp(dotDist, 0, 1);
-                let offsetDist = lerp(dotDist, 0, dist/dotDist);
+                const offsetDist = lerp(dotDist, 0, dist/dotDist);
 
                 // dir += isMouseColide ? 0 : (Math.random() * 2 - 1); // adds a little randomness to avoid the dots getting stuck
 
-                let xOffset = Math.cos(dir) * offsetDist;
-                let yOffset = Math.sin(dir) * offsetDist;
+                const xOffset = Math.cos(dir) * offsetDist;
+                const yOffset = Math.sin(dir) * offsetDist;
 
                 nextX = nextX + xOffset;
                 nextY = nextY + yOffset;
