@@ -1,20 +1,26 @@
 const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
 
-var dotSize = 15;
-var minDist = 150;
-var dotDist = 31;
+var dotSize = 5;
+var minDist = 100;
+var dotDist = 15;
 var returnDist = 1000;
 
+var returnValue = 0.01;
+
+var pushFloor = 0.7;
+
 var mouseMultiplier = 10;
-var spacingMultiplier = 1;
+var spacingMultiplier = 1.2;
 
 var dots = [];
 
 var doReturn = true;
-var doDotRepel = true;
+var doDotRepel = false;
 
 var ignoreMouse = false;
+
+var colorMode = 'brightness';
 
 var dotColor = "#ffffff";
 
@@ -52,6 +58,38 @@ document.onmousemove = (event) => {
     }
 }
 
+function calcDist(dot) {
+    const xDist = dot[2] - dot[0];
+    const yDist = dot[3] - dot[1];
+
+    return Math.sqrt(xDist*xDist + yDist*yDist);
+}
+
+function getColor(dot) {
+
+    const dist = calcDist(dot);
+    let a;
+
+    switch(colorMode) {
+        case 'negitive':
+            a = dist > minDist ? 1 : dist / minDist;
+            return `hsl(0, 0%, ${Math.floor(100 - a*100)}%)`;
+            break;
+        case 'brightness':
+            a = dist > minDist ? 1 : dist / minDist;
+            return `hsl(0, 0%, ${Math.floor(a*100)}%)`;
+            break;
+        case 'hue':
+            a = dist > minDist * 1.5 ? 1 : dist / (minDist * 1.5);
+            return `hsl(${a*300}, 100%, 50%)`;
+            break;
+        case 'white':
+        default:
+            return '#ffffff';
+            break;
+    }
+}
+
 function calcPhys(dotIndex) {
     let dot = dots[dotIndex];
 
@@ -74,6 +112,8 @@ function calcPhys(dotIndex) {
                     : xDist > 0 ?
                         Math.atan(yDist / xDist) + Math.PI : Math.atan(yDist / xDist);
 
+                
+                // let offsetDist = lerp(dotDist, 0, 1);
                 let offsetDist = lerp(dotDist, 0, dist/dotDist);
 
                 // dir += isMouseColide ? 0 : (Math.random() * 2 - 1); // adds a little randomness to avoid the dots getting stuck
@@ -88,15 +128,16 @@ function calcPhys(dotIndex) {
     } 
 
     if(doReturn) {
-        let xDist = dot[2] - dot[0];
-        let yDist = dot[3] - dot[1];
+        const xDist = dot[2] - dot[0];
+        const yDist = dot[3] - dot[1];
 
-        let dist = Math.sqrt(xDist*xDist + yDist*yDist);
+        const dist = Math.sqrt(xDist*xDist + yDist*yDist);
 
-        let t = dist > returnDist ? 1 : dist / returnDist;
+        // const t = dist > returnDist ? 1 : dist / returnDist;
+        const t = returnValue;
 
-        nextX = snapLerpB(nextX, dot[2], t, 0.9);
-        nextY = snapLerpB(nextY, dot[3], t, 0.9);
+        nextX = snapLerpB(nextX, dot[2], t, 0.1);
+        nextY = snapLerpB(nextY, dot[3], t, 0.1);
     }
 
     if(!ignoreMouse) {
@@ -123,7 +164,9 @@ function calcPhys(dotIndex) {
                 : xDist > 0 ?
                     Math.atan(yDist / xDist) + Math.PI : Math.atan(yDist / xDist);
 
-            let offsetDist = lerp(mDist, 0, dist/mDist);
+            // let offsetDist = lerp(mDist, 0, dist/mDist);
+            // let offsetDist = lerp(mDist, 0, 0.9);
+            let offsetDist = lerp(mDist, 0, lerp(pushFloor, 1, dist/mDist));
 
             
             let xOffset = Math.cos(dir) * offsetDist;
@@ -163,7 +206,8 @@ function clearFrame() {
 
 function drawFrame() {
     dots.forEach((dot) => {
-        ctx.fillStyle = dotColor;
+        // ctx.fillStyle = dotColor;
+        ctx.fillStyle = getColor(dot);
         ctx.beginPath();
         ctx.arc(dot[0], dot[1], dotSize, 0, Math.PI*2);
         // ctx.closePath();
