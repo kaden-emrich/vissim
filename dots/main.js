@@ -39,7 +39,7 @@ document.addEventListener('keypress', (event) => {
     }
 })
 
-document.onmousemove = updateMouse;
+document.addEventListener('mousemove', updateMouse);
 
 function updateMouse(event) {
     mouse.x = event.clientX;
