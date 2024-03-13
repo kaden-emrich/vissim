@@ -2,11 +2,17 @@ const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
 
 var dotSize = 10;
-var minDist = 100;
+var defaultDist = 100;
+var explodeDist = 400;
+var implodeDist = 100;
+var minDist = defaultDist;
 var dotDist = 15;
 var returnDist = 1000;
 
-var returnValue = 0.01;
+var defaultReturnValue = 0.01;
+var implodeReturnValue = 0.2;
+var explodeReturnValue = 0.005;
+var returnValue = defaultReturnValue;
 
 var pushFloor = 0.7;
 
@@ -58,18 +64,54 @@ function handleMouseMove(x, y) {
     }
 }
 
+function explode() {
+    returnValue = explodeReturnValue;
+    minDist = explodeDist;
+}
+function implode() {
+    returnValue = implodeReturnValue;
+    minDist = implodeDist;
+}
+function replode() {
+    returnValue = defaultReturnValue;
+    minDist = defaultDist;
+}
+
 function updateMouse(event) {
     handleMouseMove(event.clientX, event.clientY);
 }
 
 document.addEventListener('mousemove', updateMouse);
 
+document.addEventListener('mousedown', () => {
+    if (event.button === 2) {
+        // Right mouse button was pressed, call your function here
+        implode();
+    }
+    else {
+        explode();
+    }
+});
+document.addEventListener('mouseup', replode);
+document.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+});
+
 // Listen for the message event
 window.addEventListener('message', function(event) {
     // Check if the message is a mousemove event
-    if (event.data.type === 'mousemove') {
+    if(event.data.type === 'mousemove') {
         // Handle the mouse movement
         handleMouseMove(event.data.clientX, event.data.clientY);
+    }
+    else if(event.data.type === 'explode') {
+        explode();
+    }
+    else if(event.data.type === 'implode') {
+        implode();
+    }
+    else if(event.data.type === 'replode') {
+        replode();
     }
 });
 
@@ -87,23 +129,23 @@ function getColor(dot) {
 
     switch(colorMode) {
         case 'negitive':
-            a = dist > minDist ? 1 : dist / minDist;
+            a = dist > defaultDist ? 1 : dist / defaultDist;
             return `hsl(0, 0%, ${Math.floor(100 - a*100)}%)`;
             break;
         case 'brightness':
-            a = dist > minDist ? 1 : dist / minDist;
+            a = dist > defaultDist ? 1 : dist / defaultDist;
             return `hsl(0, 0%, ${Math.floor(a*100)}%)`;
             break;
         case 'transparency':
-            a = dist > minDist ? 1 : dist / minDist;
+            a = dist > defaultDist ? 1 : dist / defaultDist;
             return `rgba(255,255,255,${a})`;
             break;
         case 'green':
-            a = dist > minDist ? 1 : dist / minDist;
-            return `rgba(0,255,0,${a})`;
+            a = dist > defaultDist ? 1 : dist / defaultDist;
+            return `rgba(${Math.floor(100 * (1-a))},255,${Math.floor(100 * (1-a))},${lerp(0.0, 1, a)})`;
             break;
         case 'hue':
-            a = dist > minDist * 1.5 ? 1 : dist / (minDist * 1.5);
+            a = dist > defaultDist * 1.5 ? 1 : dist / (defaultDist * 1.5);
             return `hsl(${a*300}, 100%, 50%)`;
             break;
         case 'white':
