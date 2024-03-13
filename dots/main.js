@@ -39,26 +39,39 @@ document.addEventListener('keypress', (event) => {
     }
 })
 
-document.addEventListener('mousemove', updateMouse);
-
-function updateMouse(event) {
-    mouse.x = event.clientX;
-    mouse.y = event.clientY;
+function handleMouseMove(x, y) {
+    mouse.x = x;
+    mouse.y = y;
 
     if(
-        event.clientX <= 5 ||
-        event.clientX >= window.innerWidth - 5 ||
-        event.clientY <= 5 ||
-        event.clientY >= window.innerHeight - 5
+        x <= 5 ||
+        x >= window.innerWidth - 5 ||
+        y <= 5 ||
+        y >= window.innerHeight - 5
     ) {
         mouse.x = -1000;
         mouse.y = -1000;
     }
     else {
-        mouse.x = event.clientX;
-        mouse.y = event.clientY;
+        mouse.x = x;
+        mouse.y = y;
     }
 }
+
+function updateMouse(event) {
+    handleMouseMove(event.clientX, event.clientY);
+}
+
+document.addEventListener('mousemove', updateMouse);
+
+// Listen for the message event
+window.addEventListener('message', function(event) {
+    // Check if the message is a mousemove event
+    if (event.data.type === 'mousemove') {
+        // Handle the mouse movement
+        handleMouseMove(event.data.clientX, event.data.clientY);
+    }
+});
 
 function calcDist(dot) {
     const xDist = dot[2] - dot[0];
