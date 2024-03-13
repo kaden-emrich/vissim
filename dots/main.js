@@ -20,7 +20,7 @@ var doDotRepel = false;
 
 var ignoreMouse = false;
 
-var colorMode = 'transparency';
+var colorMode = 'green';
 
 var dotColor = "#ffffff";
 
@@ -82,6 +82,10 @@ function getColor(dot) {
         case 'transparency':
             a = dist > minDist ? 1 : dist / minDist;
             return `rgba(255,255,255,${a})`;
+            break;
+        case 'green':
+            a = dist > minDist ? 1 : dist / minDist;
+            return `rgba(0,255,0,${a})`;
             break;
         case 'hue':
             a = dist > minDist * 1.5 ? 1 : dist / (minDist * 1.5);
