@@ -7,6 +7,13 @@ var rainColor = "#00ff00";
 
 var rainbow = false;
 
+var colorStyle = 'default';
+
+var fallGradiant = [100, 30, 20, 100]; // hue values
+// var springGradiant = [45, 140, 300, 330];
+
+var gradiantColors = fallGradiant;
+
 var fontSize = 10;
 var delay = 20;
 var columns;
@@ -24,6 +31,10 @@ function sizeScreen() {
   for(let i = 0; i < columns; i++) {
       drops[i] = 1;
       hues[i] = 0;
+
+      if(colorStyle == 'gradiant') {
+        hues[i] = Math.random()
+      }
   }
 }
 
@@ -36,8 +47,8 @@ function importUrlVars() {
   }
 
   if(urlParams.get('rainbow') == 'true') {
-    rainbow = true;
-    console.log('Setting rainbow to: ' + rainbow);
+    colorStyle = 'rainbow'
+    console.log('Setting colorStyle to: rainbow');
   }
 
   if(urlParams.get('font-size') != null) {
@@ -49,6 +60,17 @@ function importUrlVars() {
     delay = parseInt(urlParams.get('delay'));
     console.log('Setting delay to: ' + delay);
   }
+
+  if(urlParams.get('color-style') != null) {
+    colorStyle = urlParams.get('color-style');
+    console.log('Setting colorStyle to: ' + colorStyle);
+
+    if(colorStyle == 'fall') {
+      colorStyle = 'gradiant';
+      gradiantColors = fallGradiant;
+    }
+  }
+
 }
 
 function draw() {
@@ -66,12 +88,21 @@ function draw() {
 
   for (var i = 0; i < drops.length; i++) {
     var text = symbols[Math.floor(Math.random() * symbols.length)];
-    if(rainbow) {
+    if(colorStyle == 'rainbow') {
       ctx.fillStyle = `hsl(${hues[i]}, 100%, 50%)`;
       if(hues[i] >= 360) {
         hues[i] = 0;
       }
       hues[i] += Math.random() * 5;
+    }
+    else if(colorStyle == 'gradiant') {
+      if(hues[i] >= 1) {
+        hues[i] = 0;
+      }
+
+      ctx.fillStyle = `hsl(${multiValueLerp(gradiantColors, hues[i])}, 100%, 50%)`;
+
+      hues[i] += Math.random()/50;
     }
     else {
       ctx.fillStyle = rainColor;
